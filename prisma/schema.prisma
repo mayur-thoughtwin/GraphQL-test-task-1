@@ -6,21 +6,74 @@ datasource db {
   provider = "postgresql"
 }
 
-model Employee {
-  id         String   @id @default(uuid())
-  name       String
-  age        Int
-  class      String
-  attendance Int
-  role       Role     @default(EMPLOYEE)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([name])
-  @@index([class])
-}
-
 enum Role {
   ADMIN
   EMPLOYEE
+}
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(EMPLOYEE)
+
+  employee     Employee?
+
+  createdAt    DateTime  @default(now())
+
+  @@index([role])
+}
+
+
+model Employee {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  name        String
+  age         Int?
+  class       String?
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjects    EmployeeSubject[]
+  attendance  Attendance[]
+
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([name])
+  @@index([age])
+  @@index([class])
+  @@index([isActive])
+}
+
+model Subject {
+  id        String    @id @default(uuid())
+  name      String    @unique
+
+  employees EmployeeSubject[]
+}
+
+model EmployeeSubject {
+  employeeId String
+  subjectId  String
+
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@id([employeeId, subjectId])
+  @@index([employeeId])
+  @@index([subjectId])
+}
+
+model Attendance {
+  id         String    @id @default(uuid())
+  employeeId String
+  date       DateTime
+  status     Boolean   // true = present, false = absent
+
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime  @default(now())
+
+  @@unique([employeeId, date])
+  @@index([employeeId, date])
 }
