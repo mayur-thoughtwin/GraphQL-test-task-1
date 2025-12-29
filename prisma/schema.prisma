@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Employee {
+  id         String   @id @default(uuid())
+  name       String
+  age        Int
+  class      String
+  attendance Int
+  role       Role     @default(EMPLOYEE)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([name])
+  @@index([class])
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
