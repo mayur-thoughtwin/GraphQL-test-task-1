@@ -54,4 +54,3 @@ export const adminTypeDefs = `#graphql
     markAttendance(input: MarkAttendanceInput!): Attendance!
   }
 `;
-

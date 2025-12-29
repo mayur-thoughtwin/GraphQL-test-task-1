@@ -24,4 +24,3 @@ export const authTypeDefs = `#graphql
     login(input: LoginInput!): AuthPayload!
   }
 `;
-

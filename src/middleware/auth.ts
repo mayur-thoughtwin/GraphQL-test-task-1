@@ -9,7 +9,7 @@ export const getUserFromToken = (token: string | undefined): UserPayload | null 
   try {
     // Remove 'Bearer ' prefix if present
     const actualToken = token.startsWith('Bearer ') ? token.slice(7) : token;
-    
+
     const decoded = jwt.verify(actualToken, JWT_SECRET) as {
       userId: string;
       role: 'ADMIN' | 'EMPLOYEE';
@@ -19,8 +19,7 @@ export const getUserFromToken = (token: string | undefined): UserPayload | null 
       id: decoded.userId,
       role: decoded.role,
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 };
-

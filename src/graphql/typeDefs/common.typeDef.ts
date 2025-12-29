@@ -41,4 +41,3 @@ export const commonTypeDefs = `#graphql
     createdAt: String!
   }
 `;
-

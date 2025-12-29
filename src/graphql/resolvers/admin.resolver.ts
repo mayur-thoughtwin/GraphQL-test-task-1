@@ -79,7 +79,7 @@ export const adminResolvers = {
         });
       }
 
-      const { subjectIds, ...updateData } = input;
+      const { subjectIds: _subjectIds, ...updateData } = input;
       return prisma.employee.update({ where: { id }, data: updateData, include: employeeIncludes });
     },
 
@@ -114,4 +114,3 @@ export const adminResolvers = {
     },
   },
 };
-

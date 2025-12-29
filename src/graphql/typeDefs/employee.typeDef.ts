@@ -7,4 +7,3 @@ export const employeeTypeDefs = `#graphql
     attendanceByEmployee(employeeId: String!, startDate: String, endDate: String): [Attendance!]!
   }
 `;
-

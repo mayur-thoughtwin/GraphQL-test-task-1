@@ -17,4 +17,3 @@ export const createContext = (user: UserPayload | null): Context => {
     user,
   };
 };
-

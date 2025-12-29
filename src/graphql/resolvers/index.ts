@@ -16,4 +16,3 @@ export const resolvers = {
   Employee: employeeResolvers.Employee,
   Subject: employeeResolvers.Subject,
 };
-
