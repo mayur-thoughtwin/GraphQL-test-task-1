@@ -1,7 +1,7 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { typeDefs } from './graphql/typeDefs';
-import { resolvers } from './graphql/resolvers/employee.resolver';
+import { resolvers } from './graphql/resolvers';
 import { createContext } from './context';
 import { getUserFromToken } from './middleware/auth';
 import 'dotenv/config';
@@ -12,7 +12,7 @@ async function startServer() {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
-    introspection: true, // Enable introspection for playground
+    introspection: true,
   });
 
   const { url } = await startStandaloneServer(server, {
