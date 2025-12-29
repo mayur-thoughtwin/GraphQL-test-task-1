@@ -31,9 +31,35 @@ export const adminTypeDefs = `#graphql
     isActive: Boolean
   }
 
+  enum SortField {
+    name
+    age
+    class
+    createdAt
+    updatedAt
+  }
+
+  enum SortOrder {
+    asc
+    desc
+  }
+
+  type EmployeePaginatedResponse {
+    employees: [Employee!]!
+    totalCount: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+  }
+
   extend type Query {
-    # Admin: Get all employees with filters
-    employees(filter: EmployeeFilterInput, skip: Int, take: Int): [Employee!]!
+    # Admin: Get all employees with filters, pagination, and sorting
+    employees(
+      filter: EmployeeFilterInput
+      skip: Int
+      take: Int
+      sortBy: SortField
+      sortOrder: SortOrder
+    ): EmployeePaginatedResponse!
     
     # Admin: Get all subjects
     subjects: [Subject!]!

@@ -2,12 +2,14 @@ import { GraphQLError } from 'graphql';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Context } from '../../context';
+import { validateInput } from '../../validation/validate';
+import { registerInputSchema, loginInputSchema } from '../../validation/schemas';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export const authResolvers = {
   Query: {
-    me: async (_: any, __: any, { prisma, user }: Context) => {
+    me: async (_: unknown, __: unknown, { prisma, user }: Context) => {
       if (!user) {
         throw new GraphQLError('Not authenticated', { extensions: { code: 'UNAUTHENTICATED' } });
       }
@@ -19,8 +21,10 @@ export const authResolvers = {
   },
 
   Mutation: {
-    register: async (_: any, { input }: { input: any }, { prisma }: Context) => {
-      const { email, password, role = 'EMPLOYEE' } = input;
+    register: async (_: unknown, { input }: { input: unknown }, { prisma }: Context) => {
+      // Validate input
+      const validatedInput = validateInput(registerInputSchema, input);
+      const { email, password, role } = validatedInput;
 
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
@@ -29,7 +33,7 @@ export const authResolvers = {
         });
       }
 
-      const passwordHash = await bcrypt.hash(password, 10);
+      const passwordHash = await bcrypt.hash(password, 12);
       const user = await prisma.user.create({
         data: { email, passwordHash, role },
       });
@@ -41,8 +45,10 @@ export const authResolvers = {
       return { token, user };
     },
 
-    login: async (_: any, { input }: { input: any }, { prisma }: Context) => {
-      const { email, password } = input;
+    login: async (_: unknown, { input }: { input: unknown }, { prisma }: Context) => {
+      // Validate input
+      const validatedInput = validateInput(loginInputSchema, input);
+      const { email, password } = validatedInput;
 
       const user = await prisma.user.findUnique({
         where: { email },
