@@ -103,4 +103,3 @@ export function createDataLoaders(prisma: PrismaClient) {
 }
 
 export type DataLoaders = ReturnType<typeof createDataLoaders>;
-

@@ -99,7 +99,10 @@ export const employeeFilterSchema = z.object({
 export const paginationSchema = z.object({
   skip: z.number().int().min(0).default(0),
   take: z.number().int().min(1).max(100).default(10),
-  sortBy: z.enum(['name', 'age', 'class', 'createdAt', 'updatedAt']).optional().default('createdAt'),
+  sortBy: z
+    .enum(['name', 'age', 'class', 'createdAt', 'updatedAt'])
+    .optional()
+    .default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
@@ -127,4 +130,3 @@ export type CreateSubjectInput = z.infer<typeof createSubjectInputSchema>;
 export type MarkAttendanceInput = z.infer<typeof markAttendanceInputSchema>;
 export type EmployeeFilter = z.infer<typeof employeeFilterSchema>;
 export type PaginationInput = z.infer<typeof paginationSchema>;
-

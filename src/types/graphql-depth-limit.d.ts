@@ -13,4 +13,3 @@ declare module 'graphql-depth-limit' {
 
   export default depthLimit;
 }
-

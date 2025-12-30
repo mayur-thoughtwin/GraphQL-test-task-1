@@ -10,13 +10,14 @@ import 'dotenv/config';
 const PORT = parseInt(process.env.PORT || '4000', 10);
 
 // Query depth limit to prevent deeply nested queries (DoS protection)
-const MAX_QUERY_DEPTH = 7;
+const MAX_QUERY_DEPTH = 10;
 
 async function startServer() {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
     introspection: true,
+    csrfPrevention: false,
     // Validation rules for security
     validationRules: [depthLimit(MAX_QUERY_DEPTH)],
     // Format errors for better client experience
