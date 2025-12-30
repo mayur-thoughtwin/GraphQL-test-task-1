@@ -1,5 +1,6 @@
 export const adminTypeDefs = `#graphql
   input CreateEmployeeInput {
+    userId: String!
     name: String!
     age: Int
     class: String
@@ -64,6 +65,9 @@ export const adminTypeDefs = `#graphql
     # Admin: Get all subjects
     subjects: [Subject!]!
     subject(id: ID!): Subject
+
+    # Admin: Get users without employee records (for creating new employees)
+    usersWithoutEmployees: [User!]!
   }
 
   extend type Mutation {

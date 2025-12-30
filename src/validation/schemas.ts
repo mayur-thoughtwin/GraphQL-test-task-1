@@ -25,6 +25,7 @@ export const loginInputSchema = z.object({
 
 // Employee validation schemas
 export const createEmployeeInputSchema = z.object({
+  userId: z.string().uuid('Invalid user ID format'),
   name: z
     .string()
     .min(2, 'Name must be at least 2 characters')
@@ -118,6 +119,15 @@ export const attendanceQuerySchema = z.object({
     .optional(),
 });
 
+// Schema for employee to update their own name
+export const updateMyNameSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must be less than 100 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes'),
+});
+
 // ID validation
 export const idSchema = z.string().uuid('Invalid ID format');
 
@@ -130,3 +140,4 @@ export type CreateSubjectInput = z.infer<typeof createSubjectInputSchema>;
 export type MarkAttendanceInput = z.infer<typeof markAttendanceInputSchema>;
 export type EmployeeFilter = z.infer<typeof employeeFilterSchema>;
 export type PaginationInput = z.infer<typeof paginationSchema>;
+export type UpdateMyNameInput = z.infer<typeof updateMyNameSchema>;

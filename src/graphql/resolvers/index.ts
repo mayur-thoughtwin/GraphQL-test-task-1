@@ -12,6 +12,7 @@ export const resolvers = {
   Mutation: {
     ...authResolvers.Mutation,
     ...adminResolvers.Mutation,
+    ...employeeResolvers.Mutation,
   },
   // Field resolvers for type resolution with DataLoaders
   Employee: employeeResolvers.Employee,

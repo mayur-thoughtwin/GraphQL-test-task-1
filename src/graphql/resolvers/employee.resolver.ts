@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { Context } from '../../context';
 import { validateInput, validateId } from '../../validation/validate';
-import { attendanceQuerySchema } from '../../validation/schemas';
+import { attendanceQuerySchema, updateMyNameSchema } from '../../validation/schemas';
 
 // Helper to check employee access
 const requireAuth = ({ user }: Context) => {
@@ -97,6 +97,60 @@ export const employeeResolvers = {
       });
 
       return employee;
+    },
+  },
+
+  Mutation: {
+    // Update own name - accessible by both employees and admins
+    // Creates profile if it doesn't exist
+    updateMyName: async (_: unknown, { input }: { input: { name: string } }, ctx: Context) => {
+      const user = requireAuth(ctx);
+      const { prisma } = ctx;
+
+      // Validate input
+      const validatedInput = validateInput(updateMyNameSchema, input);
+
+      try {
+        // Find or create the employee profile for the authenticated user
+        const existingEmployee = await prisma.employee.findUnique({
+          where: { userId: user.id },
+        });
+
+        let employee;
+        if (existingEmployee) {
+          // Update existing profile
+          employee = await prisma.employee.update({
+            where: { id: existingEmployee.id },
+            data: { name: validatedInput.name },
+            include: employeeIncludes,
+          });
+        } else {
+          // Create new profile with the name
+          employee = await prisma.employee.create({
+            data: {
+              userId: user.id,
+              name: validatedInput.name,
+            },
+            include: employeeIncludes,
+          });
+        }
+
+        if (!employee) {
+          throw new GraphQLError('Failed to update/create employee profile', {
+            extensions: { code: 'INTERNAL_SERVER_ERROR' },
+          });
+        }
+
+        return employee;
+      } catch (error) {
+        console.error('updateMyName error:', error);
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        throw new GraphQLError('Failed to update name. Please try again.', {
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        });
+      }
     },
   },
 

@@ -88,15 +88,45 @@ export const adminResolvers = {
       validateId(id, 'subject ID');
       return ctx.prisma.subject.findUnique({ where: { id }, include: subjectIncludes });
     },
+
+    usersWithoutEmployees: async (_: unknown, __: unknown, ctx: Context) => {
+      requireAdmin(ctx);
+      return ctx.prisma.user.findMany({
+        where: { 
+          employee: null,
+          role: 'EMPLOYEE'  // Only return users with EMPLOYEE role, not ADMIN
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    },
   },
 
   Mutation: {
     createEmployee: async (_: unknown, { input }: { input: unknown }, ctx: Context) => {
       requireAdmin(ctx);
-      const { prisma, user } = ctx;
+      const { prisma } = ctx;
 
       // Validate input
       const validatedInput = validateInput(createEmployeeInputSchema, input);
+
+      // Check if user exists
+      const targetUser = await prisma.user.findUnique({
+        where: { id: validatedInput.userId },
+        include: { employee: true },
+      });
+
+      if (!targetUser) {
+        throw new GraphQLError('User not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Check if user already has an employee record
+      if (targetUser.employee) {
+        throw new GraphQLError('User already has an employee record', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
 
       // Check if subject IDs exist
       if (validatedInput.subjectIds?.length) {
@@ -115,7 +145,7 @@ export const adminResolvers = {
 
       return prisma.employee.create({
         data: {
-          userId: user!.id,
+          userId: validatedInput.userId,
           name: validatedInput.name,
           age: validatedInput.age,
           class: validatedInput.class,
