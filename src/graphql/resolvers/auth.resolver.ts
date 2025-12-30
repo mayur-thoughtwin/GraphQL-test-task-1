@@ -63,7 +63,10 @@ export const authResolvers = {
     // Register - does NOT return token, requires OTP verification first
     register: async (_: unknown, { input }: { input: unknown }, { prisma }: Context) => {
       const validatedInput = validateInput(registerInputSchema, input);
-      const { email, password, role } = validatedInput;
+      const { password, role } = validatedInput;
+      
+      // Convert email to lowercase for case-insensitive handling
+      const email = validatedInput.email.toLowerCase().trim();
 
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
@@ -104,7 +107,7 @@ export const authResolvers = {
 
       await prisma.user.create({
         data: { 
-          email, 
+          email, // Already lowercase
           passwordHash, 
           role,
           otp,
@@ -135,7 +138,10 @@ export const authResolvers = {
     // Login - checks OTP verification status
     login: async (_: unknown, { input }: { input: unknown }, { prisma }: Context) => {
       const validatedInput = validateInput(loginInputSchema, input);
-      const { email, password } = validatedInput;
+      const { password } = validatedInput;
+      
+      // Convert email to lowercase for case-insensitive handling
+      const email = validatedInput.email.toLowerCase().trim();
 
       const user = await prisma.user.findUnique({
         where: { email },
@@ -200,7 +206,8 @@ export const authResolvers = {
 
     // Send OTP to user's email
     sendOTP: async (_: unknown, { input }: { input: SendOTPInput }, { prisma }: Context) => {
-      const { email } = input;
+      // Convert email to lowercase for case-insensitive handling
+      const email = input.email.toLowerCase().trim();
 
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user) {
@@ -237,7 +244,9 @@ export const authResolvers = {
 
     // Verify OTP - returns token on successful verification
     verifyOTP: async (_: unknown, { input }: { input: VerifyOTPInput }, { prisma }: Context) => {
-      const { email, otp } = input;
+      // Convert email to lowercase for case-insensitive handling
+      const email = input.email.toLowerCase().trim();
+      const { otp } = input;
 
       const user = await prisma.user.findUnique({ 
         where: { email },
@@ -310,7 +319,8 @@ export const authResolvers = {
 
     // Resend OTP
     resendOTP: async (_: unknown, { input }: { input: SendOTPInput }, { prisma }: Context) => {
-      const { email } = input;
+      // Convert email to lowercase for case-insensitive handling
+      const email = input.email.toLowerCase().trim();
 
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user) {

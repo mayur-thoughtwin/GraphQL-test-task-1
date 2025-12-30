@@ -98,7 +98,8 @@ export const employeeResolvers = {
 
   Mutation: {
     // Update own name - accessible by both employees and admins
-    // Creates profile if it doesn't exist
+    // Admin: Can create/update their own profile
+    // Employee: Can only update if profile exists (admin must create first)
     updateMyName: async (_: unknown, { input }: { input: { name: string } }, ctx: Context) => {
       // Check auth and OTP verification
       const user = await requireAuthAndVerified(ctx);
@@ -108,34 +109,37 @@ export const employeeResolvers = {
       const validatedInput = validateInput(updateMyNameSchema, input);
 
       try {
-        // Find or create the employee profile for the authenticated user
+        // Find existing employee profile
         const existingEmployee = await prisma.employee.findUnique({
           where: { userId: user.id },
         });
 
         let employee;
+
         if (existingEmployee) {
-          // Update existing profile
+          // Update existing profile (both Admin and Employee can do this)
           employee = await prisma.employee.update({
             where: { id: existingEmployee.id },
             data: { name: validatedInput.name },
             include: employeeIncludes,
           });
         } else {
-          // Create new profile with the name
-          employee = await prisma.employee.create({
-            data: {
-              userId: user.id,
-              name: validatedInput.name,
-            },
-            include: employeeIncludes,
-          });
-        }
-
-        if (!employee) {
-          throw new GraphQLError('Failed to update/create employee profile', {
-            extensions: { code: 'INTERNAL_SERVER_ERROR' },
-          });
+          // Profile doesn't exist
+          if (user.role === 'ADMIN') {
+            // Admin can create their own profile
+            employee = await prisma.employee.create({
+              data: {
+                userId: user.id,
+                name: validatedInput.name,
+              },
+              include: employeeIncludes,
+            });
+          } else {
+            // Employee cannot create their own profile - Admin must do it
+            throw new GraphQLError('Employee profile not found. Please contact admin to create your profile.', {
+              extensions: { code: 'NOT_FOUND' },
+            });
+          }
         }
 
         return employee;
