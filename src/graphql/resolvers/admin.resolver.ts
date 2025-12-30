@@ -53,7 +53,13 @@ export const adminResolvers = {
         sortOrder: sortOrder ?? 'desc',
       });
 
-      const where: Record<string, unknown> = {};
+      // Base filter - exclude employees linked to ADMIN users
+      const where: Record<string, unknown> = {
+        user: {
+          role: 'EMPLOYEE', // Only include employees linked to EMPLOYEE role users
+        },
+      };
+      
       if (validatedFilter.name) where.name = { contains: validatedFilter.name, mode: 'insensitive' };
       if (validatedFilter.age !== undefined) where.age = validatedFilter.age;
       if (validatedFilter.class) where.class = validatedFilter.class;

@@ -112,11 +112,13 @@ export const attendanceQuerySchema = z.object({
   startDate: z
     .string()
     .refine((val) => !isNaN(Date.parse(val)), 'Invalid start date format')
-    .optional(),
+    .optional()
+    .nullable(),
   endDate: z
     .string()
     .refine((val) => !isNaN(Date.parse(val)), 'Invalid end date format')
-    .optional(),
+    .optional()
+    .nullable(),
 });
 
 // Schema for employee to update their own name
