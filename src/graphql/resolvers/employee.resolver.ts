@@ -2,14 +2,7 @@ import { GraphQLError } from 'graphql';
 import { Context } from '../../context';
 import { validateInput, validateId } from '../../validation/validate';
 import { attendanceQuerySchema, updateMyNameSchema } from '../../validation/schemas';
-
-// Helper to check employee access
-const requireAuth = ({ user }: Context) => {
-  if (!user) {
-    throw new GraphQLError('Not authenticated', { extensions: { code: 'UNAUTHENTICATED' } });
-  }
-  return user;
-};
+import { requireAuthAndVerified } from '../../utils/auth.utils';
 
 const employeeIncludes = {
   user: true,
@@ -20,7 +13,8 @@ const employeeIncludes = {
 export const employeeResolvers = {
   Query: {
     employee: async (_: unknown, { id }: { id: string }, ctx: Context) => {
-      const user = requireAuth(ctx);
+      // Check auth and OTP verification
+      const user = await requireAuthAndVerified(ctx);
       const { prisma } = ctx;
 
       // Validate ID
@@ -51,7 +45,8 @@ export const employeeResolvers = {
       args: { employeeId: string; startDate?: string; endDate?: string },
       ctx: Context
     ) => {
-      const user = requireAuth(ctx);
+      // Check auth and OTP verification
+      const user = await requireAuthAndVerified(ctx);
       const { prisma } = ctx;
 
       // Validate input
@@ -88,7 +83,8 @@ export const employeeResolvers = {
 
     // My profile - for employees to easily get their own profile
     myProfile: async (_: unknown, __: unknown, ctx: Context) => {
-      const user = requireAuth(ctx);
+      // Check auth and OTP verification
+      const user = await requireAuthAndVerified(ctx);
       const { prisma } = ctx;
 
       const employee = await prisma.employee.findUnique({
@@ -104,7 +100,8 @@ export const employeeResolvers = {
     // Update own name - accessible by both employees and admins
     // Creates profile if it doesn't exist
     updateMyName: async (_: unknown, { input }: { input: { name: string } }, ctx: Context) => {
-      const user = requireAuth(ctx);
+      // Check auth and OTP verification
+      const user = await requireAuthAndVerified(ctx);
       const { prisma } = ctx;
 
       // Validate input

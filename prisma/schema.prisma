@@ -16,11 +16,17 @@ model User {
   passwordHash String
   role         Role      @default(EMPLOYEE)
 
+  // OTP fields for email verification
+  otp          String?
+  otpVerified  Boolean   @default(false)
+  otpExpires   DateTime?
+
   employee     Employee?
 
   createdAt    DateTime  @default(now())
 
   @@index([role])
+  @@index([otpVerified])
 }
 
 

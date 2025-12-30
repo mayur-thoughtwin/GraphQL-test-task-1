@@ -1,5 +1,5 @@
 import { GraphQLError } from 'graphql';
-import { Context } from '../../context';
+import { Context, UserPayload } from '../../context';
 import { validateInput, validateId } from '../../validation/validate';
 import {
   createEmployeeInputSchema,
@@ -9,12 +9,12 @@ import {
   employeeFilterSchema,
   paginationSchema,
 } from '../../validation/schemas';
+import { requireAuthAndVerified } from '../../utils/auth.utils';
 
-// Helper to check admin access
-const requireAdmin = ({ user }: Context) => {
-  if (!user) {
-    throw new GraphQLError('Not authenticated', { extensions: { code: 'UNAUTHENTICATED' } });
-  }
+// Helper to check admin access with OTP verification
+const requireAdmin = async (ctx: Context): Promise<UserPayload> => {
+  const user = await requireAuthAndVerified(ctx);
+  
   if (user.role !== 'ADMIN') {
     throw new GraphQLError('Admin access required', { extensions: { code: 'FORBIDDEN' } });
   }
@@ -39,7 +39,7 @@ export const adminResolvers = {
       { filter, skip, take, sortBy, sortOrder }: Record<string, unknown>,
       ctx: Context
     ) => {
-      requireAdmin(ctx);
+      await requireAdmin(ctx);
       const { prisma } = ctx;
 
       // Validate filter if provided
@@ -53,10 +53,11 @@ export const adminResolvers = {
         sortOrder: sortOrder ?? 'desc',
       });
 
-      // Base filter - exclude employees linked to ADMIN users
+      // Base filter - only show verified employees with EMPLOYEE role
       const where: Record<string, unknown> = {
         user: {
           role: 'EMPLOYEE', // Only include employees linked to EMPLOYEE role users
+          otpVerified: true, // Only show employees whose OTP is verified
         },
       };
       
@@ -85,22 +86,23 @@ export const adminResolvers = {
     },
 
     subjects: async (_: unknown, __: unknown, ctx: Context) => {
-      requireAdmin(ctx);
+      await requireAdmin(ctx);
       return ctx.prisma.subject.findMany({ include: subjectIncludes });
     },
 
     subject: async (_: unknown, { id }: { id: string }, ctx: Context) => {
-      requireAdmin(ctx);
+      await requireAdmin(ctx);
       validateId(id, 'subject ID');
       return ctx.prisma.subject.findUnique({ where: { id }, include: subjectIncludes });
     },
 
     usersWithoutEmployees: async (_: unknown, __: unknown, ctx: Context) => {
-      requireAdmin(ctx);
+      await requireAdmin(ctx);
       return ctx.prisma.user.findMany({
         where: { 
           employee: null,
-          role: 'EMPLOYEE'  // Only return users with EMPLOYEE role, not ADMIN
+          role: 'EMPLOYEE',  // Only return users with EMPLOYEE role, not ADMIN
+          otpVerified: true, // Only show verified users
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -109,7 +111,7 @@ export const adminResolvers = {
 
   Mutation: {
     createEmployee: async (_: unknown, { input }: { input: unknown }, ctx: Context) => {
-      requireAdmin(ctx);
+      await requireAdmin(ctx);
       const { prisma } = ctx;
 
       // Validate input
@@ -164,7 +166,7 @@ export const adminResolvers = {
     },
 
     updateEmployee: async (_: unknown, { id, input }: { id: string; input: unknown }, ctx: Context) => {
-      requireAdmin(ctx);
+      await requireAdmin(ctx);
       const { prisma } = ctx;
 
       // Validate ID and input
@@ -204,7 +206,7 @@ export const adminResolvers = {
     },
 
     deleteEmployee: async (_: unknown, { id }: { id: string }, ctx: Context) => {
-      requireAdmin(ctx);
+      await requireAdmin(ctx);
 
       // Validate ID
       validateId(id, 'employee ID');
@@ -222,7 +224,7 @@ export const adminResolvers = {
     },
 
     createSubject: async (_: unknown, { input }: { input: unknown }, ctx: Context) => {
-      requireAdmin(ctx);
+      await requireAdmin(ctx);
 
       // Validate input
       const validatedInput = validateInput(createSubjectInputSchema, input);
@@ -244,7 +246,7 @@ export const adminResolvers = {
     },
 
     deleteSubject: async (_: unknown, { id }: { id: string }, ctx: Context) => {
-      requireAdmin(ctx);
+      await requireAdmin(ctx);
 
       // Validate ID
       validateId(id, 'subject ID');
@@ -262,7 +264,7 @@ export const adminResolvers = {
     },
 
     markAttendance: async (_: unknown, { input }: { input: unknown }, ctx: Context) => {
-      requireAdmin(ctx);
+      await requireAdmin(ctx);
       const { prisma } = ctx;
 
       // Validate input

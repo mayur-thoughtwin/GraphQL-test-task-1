@@ -8,6 +8,7 @@ export const commonTypeDefs = `#graphql
     id: ID!
     email: String!
     role: Role!
+    otpVerified: Boolean!
     employee: Employee
     createdAt: String!
   }
