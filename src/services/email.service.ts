@@ -1,5 +1,5 @@
-import nodemailer from "nodemailer";
-import { emailConfig } from "../config/email.config";
+import nodemailer from 'nodemailer';
+import { emailConfig } from '../config/email.config';
 
 // Create reusable transporter object using SMTP transport
 const transporter = nodemailer.createTransport({
@@ -32,14 +32,11 @@ export const isOTPValid = (expiryTime: Date): boolean => {
 };
 
 // Send OTP email
-export const sendOTPEmail = async (
-  email: string,
-  otp: string
-): Promise<boolean> => {
+export const sendOTPEmail = async (email: string, otp: string): Promise<boolean> => {
   const mailOptions = {
     from: `"${emailConfig.fromName}" <${emailConfig.user}>`,
     to: email,
-    subject: "🔐 Your Email Verification Code",
+    subject: '🔐 Your Email Verification Code',
     html: `
       <!DOCTYPE html>
       <html>
@@ -96,8 +93,8 @@ export const sendOTPEmail = async (
     console.log(`✅ OTP email sent successfully to ${email}`);
     return true;
   } catch (error) {
-    console.error("❌ Error sending OTP email:", error);
-    throw new Error("Failed to send OTP email. Please try again.");
+    console.error('❌ Error sending OTP email:', error);
+    throw new Error('Failed to send OTP email. Please try again.');
   }
 };
 
@@ -105,11 +102,10 @@ export const sendOTPEmail = async (
 export const verifyEmailConnection = async (): Promise<boolean> => {
   try {
     await transporter.verify();
-    console.log("✅ Email service connected successfully");
+    console.log('✅ Email service connected successfully');
     return true;
   } catch (error) {
-    console.error("❌ Email service connection failed:", error);
+    console.error('❌ Email service connection failed:', error);
     return false;
   }
 };
-

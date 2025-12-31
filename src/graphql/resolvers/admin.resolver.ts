@@ -7,11 +7,10 @@ import {
   createSubjectInputSchema,
   markAttendanceInputSchema,
   employeeFilterSchema,
-  paginationSchema,
 } from '../../validation/schemas';
 import { requireAuthAndVerified } from '../../utils/auth.utils';
+import { getPaginationOptions } from '../../utils/pagination.utils';
 
-// Helper to check admin access with OTP verification
 const requireAdmin = async (ctx: Context): Promise<UserPayload> => {
   const user = await requireAuthAndVerified(ctx);
   
@@ -21,7 +20,6 @@ const requireAdmin = async (ctx: Context): Promise<UserPayload> => {
   return user;
 };
 
-// Common includes for employee queries
 const employeeIncludes = {
   user: true,
   subjects: { include: { subject: true } },
@@ -42,22 +40,18 @@ export const adminResolvers = {
       await requireAdmin(ctx);
       const { prisma } = ctx;
 
-      // Validate filter if provided
       const validatedFilter = filter ? validateInput(employeeFilterSchema, filter) : {};
-
-      // Validate pagination
-      const pagination = validateInput(paginationSchema, {
-        skip: skip ?? 0,
-        take: take ?? 10,
-        sortBy: sortBy ?? 'createdAt',
-        sortOrder: sortOrder ?? 'desc',
+      const pagination = getPaginationOptions({ 
+        skip: skip as number, 
+        take: take as number, 
+        sortBy: sortBy as string, 
+        sortOrder: sortOrder as string 
       });
 
-      // Base filter - only show verified employees with EMPLOYEE role
       const where: Record<string, unknown> = {
         user: {
-          role: 'EMPLOYEE', // Only include employees linked to EMPLOYEE role users
-          otpVerified: true, // Only show employees whose OTP is verified
+          role: 'EMPLOYEE',
+          otpVerified: true,
         },
       };
       
@@ -101,8 +95,8 @@ export const adminResolvers = {
       return ctx.prisma.user.findMany({
         where: { 
           employee: null,
-          role: 'EMPLOYEE',  // Only return users with EMPLOYEE role, not ADMIN
-          otpVerified: true, // Only show verified users
+          role: 'EMPLOYEE',
+          otpVerified: true,
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -114,10 +108,8 @@ export const adminResolvers = {
       await requireAdmin(ctx);
       const { prisma } = ctx;
 
-      // Validate input
       const validatedInput = validateInput(createEmployeeInputSchema, input);
 
-      // Check if user exists
       const targetUser = await prisma.user.findUnique({
         where: { id: validatedInput.userId },
         include: { employee: true },
@@ -129,14 +121,12 @@ export const adminResolvers = {
         });
       }
 
-      // Check if user already has an employee record
       if (targetUser.employee) {
         throw new GraphQLError('User already has an employee record', {
           extensions: { code: 'BAD_USER_INPUT' },
         });
       }
 
-      // Check if subject IDs exist
       if (validatedInput.subjectIds?.length) {
         const subjects = await prisma.subject.findMany({
           where: { id: { in: validatedInput.subjectIds } },
@@ -169,11 +159,9 @@ export const adminResolvers = {
       await requireAdmin(ctx);
       const { prisma } = ctx;
 
-      // Validate ID and input
       validateId(id, 'employee ID');
       const validatedInput = validateInput(updateEmployeeInputSchema, input);
 
-      // Check if employee exists
       const existingEmployee = await prisma.employee.findUnique({ where: { id } });
       if (!existingEmployee) {
         throw new GraphQLError('Employee not found', {
@@ -181,7 +169,6 @@ export const adminResolvers = {
         });
       }
 
-      // Check if subject IDs exist
       if (validatedInput.subjectIds?.length) {
         const subjects = await prisma.subject.findMany({
           where: { id: { in: validatedInput.subjectIds } },
@@ -208,10 +195,8 @@ export const adminResolvers = {
     deleteEmployee: async (_: unknown, { id }: { id: string }, ctx: Context) => {
       await requireAdmin(ctx);
 
-      // Validate ID
       validateId(id, 'employee ID');
 
-      // Check if employee exists
       const existingEmployee = await ctx.prisma.employee.findUnique({ where: { id } });
       if (!existingEmployee) {
         throw new GraphQLError('Employee not found', {
@@ -226,10 +211,8 @@ export const adminResolvers = {
     createSubject: async (_: unknown, { input }: { input: unknown }, ctx: Context) => {
       await requireAdmin(ctx);
 
-      // Validate input
       const validatedInput = validateInput(createSubjectInputSchema, input);
 
-      // Check if subject name already exists
       const existing = await ctx.prisma.subject.findUnique({
         where: { name: validatedInput.name },
       });
@@ -248,10 +231,8 @@ export const adminResolvers = {
     deleteSubject: async (_: unknown, { id }: { id: string }, ctx: Context) => {
       await requireAdmin(ctx);
 
-      // Validate ID
       validateId(id, 'subject ID');
 
-      // Check if subject exists
       const existingSubject = await ctx.prisma.subject.findUnique({ where: { id } });
       if (!existingSubject) {
         throw new GraphQLError('Subject not found', {
@@ -267,11 +248,9 @@ export const adminResolvers = {
       await requireAdmin(ctx);
       const { prisma } = ctx;
 
-      // Validate input
       const validatedInput = validateInput(markAttendanceInputSchema, input);
       const { employeeId, date, status } = validatedInput;
 
-      // Check if employee exists
       const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
       if (!employee) {
         throw new GraphQLError('Employee not found', {

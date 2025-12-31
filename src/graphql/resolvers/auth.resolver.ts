@@ -29,9 +29,7 @@ export const authResolvers = {
         include: { employee: true },
       });
 
-      // Check if user is OTP verified - if not, send new OTP and throw error
       if (dbUser && !dbUser.otpVerified) {
-        // Generate and send new OTP
         const otp = generateOTP();
         const otpExpires = getOTPExpiry();
         
@@ -60,17 +58,14 @@ export const authResolvers = {
   },
 
   Mutation: {
-    // Register - does NOT return token, requires OTP verification first
     register: async (_: unknown, { input }: { input: unknown }, { prisma }: Context) => {
       const validatedInput = validateInput(registerInputSchema, input);
       const { password, role } = validatedInput;
       
-      // Convert email to lowercase for case-insensitive handling
       const email = validatedInput.email.toLowerCase().trim();
 
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
-        // If user exists but not verified, resend OTP
         if (!existingUser.otpVerified) {
           const otp = generateOTP();
           const otpExpires = getOTPExpiry();
@@ -101,13 +96,12 @@ export const authResolvers = {
 
       const passwordHash = await bcrypt.hash(password, 12);
       
-      // Generate OTP for email verification
       const otp = generateOTP();
       const otpExpires = getOTPExpiry();
 
       await prisma.user.create({
         data: { 
-          email, // Already lowercase
+          email,
           passwordHash, 
           role,
           otp,
@@ -116,7 +110,6 @@ export const authResolvers = {
         },
       });
 
-      // Send OTP email
       try {
         await sendOTPEmail(email, otp);
       } catch (error) {
@@ -126,7 +119,6 @@ export const authResolvers = {
         });
       }
 
-      // Return success but NO token - user must verify OTP first
       return {
         success: true,
         message: 'Registration successful! Please verify your email with the OTP sent to your inbox.',
@@ -135,12 +127,10 @@ export const authResolvers = {
       };
     },
 
-    // Login - checks OTP verification status
     login: async (_: unknown, { input }: { input: unknown }, { prisma }: Context) => {
       const validatedInput = validateInput(loginInputSchema, input);
       const { password } = validatedInput;
       
-      // Convert email to lowercase for case-insensitive handling
       const email = validatedInput.email.toLowerCase().trim();
 
       const user = await prisma.user.findUnique({
@@ -161,9 +151,7 @@ export const authResolvers = {
         });
       }
 
-      // Check if user is OTP verified
       if (!user.otpVerified) {
-        // Generate and send new OTP
         const otp = generateOTP();
         const otpExpires = getOTPExpiry();
         
@@ -178,7 +166,6 @@ export const authResolvers = {
           console.error('Failed to send OTP email:', error);
         }
 
-        // Return response indicating OTP is required
         return {
           token: null,
           user: null,
@@ -189,7 +176,6 @@ export const authResolvers = {
         };
       }
 
-      // User is verified, generate token
       const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
         expiresIn: '7d',
       });
@@ -204,9 +190,7 @@ export const authResolvers = {
       };
     },
 
-    // Send OTP to user's email
     sendOTP: async (_: unknown, { input }: { input: SendOTPInput }, { prisma }: Context) => {
-      // Convert email to lowercase for case-insensitive handling
       const email = input.email.toLowerCase().trim();
 
       const user = await prisma.user.findUnique({ where: { email } });
@@ -223,17 +207,14 @@ export const authResolvers = {
         };
       }
 
-      // Generate new OTP
       const otp = generateOTP();
       const otpExpires = getOTPExpiry();
 
-      // Update user with new OTP
       await prisma.user.update({
         where: { email },
         data: { otp, otpExpires },
       });
 
-      // Send OTP email
       await sendOTPEmail(email, otp);
 
       return {
@@ -242,9 +223,7 @@ export const authResolvers = {
       };
     },
 
-    // Verify OTP - returns token on successful verification
     verifyOTP: async (_: unknown, { input }: { input: VerifyOTPInput }, { prisma }: Context) => {
-      // Convert email to lowercase for case-insensitive handling
       const email = input.email.toLowerCase().trim();
       const { otp } = input;
 
@@ -260,7 +239,6 @@ export const authResolvers = {
       }
 
       if (user.otpVerified) {
-        // Already verified, generate token
         const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
           expiresIn: '7d',
         });
@@ -279,21 +257,18 @@ export const authResolvers = {
         });
       }
 
-      // Check if OTP is expired
       if (!isOTPValid(user.otpExpires)) {
         throw new GraphQLError('OTP has expired. Please request a new OTP.', {
           extensions: { code: 'OTP_EXPIRED' },
         });
       }
 
-      // Check if OTP matches
       if (user.otp !== otp) {
         throw new GraphQLError('Invalid OTP. Please try again.', {
           extensions: { code: 'INVALID_OTP' },
         });
       }
 
-      // Mark user as verified
       const updatedUser = await prisma.user.update({
         where: { email },
         data: {
@@ -304,7 +279,6 @@ export const authResolvers = {
         include: { employee: true },
       });
 
-      // Generate JWT token after successful verification
       const token = jwt.sign({ userId: updatedUser.id, role: updatedUser.role }, JWT_SECRET, {
         expiresIn: '7d',
       });
@@ -317,9 +291,7 @@ export const authResolvers = {
       };
     },
 
-    // Resend OTP
     resendOTP: async (_: unknown, { input }: { input: SendOTPInput }, { prisma }: Context) => {
-      // Convert email to lowercase for case-insensitive handling
       const email = input.email.toLowerCase().trim();
 
       const user = await prisma.user.findUnique({ where: { email } });
@@ -336,17 +308,14 @@ export const authResolvers = {
         };
       }
 
-      // Generate new OTP
       const otp = generateOTP();
       const otpExpires = getOTPExpiry();
 
-      // Update user with new OTP
       await prisma.user.update({
         where: { email },
         data: { otp, otpExpires },
       });
 
-      // Send OTP email
       await sendOTPEmail(email, otp);
 
       return {

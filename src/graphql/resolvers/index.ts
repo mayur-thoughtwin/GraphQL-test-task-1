@@ -2,7 +2,6 @@ import { authResolvers } from './auth.resolver';
 import { adminResolvers } from './admin.resolver';
 import { employeeResolvers } from './employee.resolver';
 
-// Merge all resolvers
 export const resolvers = {
   Query: {
     ...authResolvers.Query,
@@ -14,7 +13,6 @@ export const resolvers = {
     ...adminResolvers.Mutation,
     ...employeeResolvers.Mutation,
   },
-  // Field resolvers for type resolution with DataLoaders
   Employee: employeeResolvers.Employee,
   Subject: employeeResolvers.Subject,
   User: employeeResolvers.User,

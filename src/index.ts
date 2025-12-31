@@ -9,7 +9,6 @@ import 'dotenv/config';
 
 const PORT = parseInt(process.env.PORT || '4000', 10);
 
-// Query depth limit to prevent deeply nested queries (DoS protection)
 const MAX_QUERY_DEPTH = 10;
 
 async function startServer() {
@@ -18,14 +17,10 @@ async function startServer() {
     resolvers,
     introspection: true,
     csrfPrevention: false,
-    // Validation rules for security
     validationRules: [depthLimit(MAX_QUERY_DEPTH)],
-    // Format errors for better client experience
     formatError: (formattedError) => {
-      // Log the error for debugging (in production, use proper logging)
       console.error('GraphQL Error:', formattedError);
 
-      // Don't expose internal server errors to clients
       if (formattedError.extensions?.code === 'INTERNAL_SERVER_ERROR') {
         return {
           message: 'An internal error occurred',
@@ -35,7 +30,6 @@ async function startServer() {
 
       return formattedError;
     },
-    // Apollo Server plugins for performance monitoring
     plugins: [
       {
         async requestDidStart() {
@@ -43,7 +37,6 @@ async function startServer() {
           return {
             async willSendResponse() {
               const duration = Date.now() - start;
-              // Log slow queries (> 1 second)
               if (duration > 1000) {
                 console.warn(`Slow query detected: ${duration}ms`);
               }

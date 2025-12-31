@@ -10,8 +10,8 @@ export const requireAuthAndVerified = async (ctx: Context): Promise<UserPayload>
   const { user, prisma } = ctx;
 
   if (!user) {
-    throw new GraphQLError('Not authenticated', { 
-      extensions: { code: 'UNAUTHENTICATED' } 
+    throw new GraphQLError('Not authenticated', {
+      extensions: { code: 'UNAUTHENTICATED' },
     });
   }
 
@@ -21,8 +21,8 @@ export const requireAuthAndVerified = async (ctx: Context): Promise<UserPayload>
   });
 
   if (!dbUser) {
-    throw new GraphQLError('User not found', { 
-      extensions: { code: 'NOT_FOUND' } 
+    throw new GraphQLError('User not found', {
+      extensions: { code: 'NOT_FOUND' },
     });
   }
 
@@ -30,7 +30,7 @@ export const requireAuthAndVerified = async (ctx: Context): Promise<UserPayload>
     // Generate and send new OTP
     const otp = generateOTP();
     const otpExpires = getOTPExpiry();
-    
+
     await prisma.user.update({
       where: { id: user.id },
       data: { otp, otpExpires },
@@ -43,7 +43,7 @@ export const requireAuthAndVerified = async (ctx: Context): Promise<UserPayload>
     }
 
     throw new GraphQLError('Email not verified. A new OTP has been sent to your email.', {
-      extensions: { 
+      extensions: {
         code: 'OTP_REQUIRED',
         email: dbUser.email,
         requiresOTPVerification: true,
@@ -62,11 +62,10 @@ export const requireAuth = (ctx: Context): UserPayload => {
   const { user } = ctx;
 
   if (!user) {
-    throw new GraphQLError('Not authenticated', { 
-      extensions: { code: 'UNAUTHENTICATED' } 
+    throw new GraphQLError('Not authenticated', {
+      extensions: { code: 'UNAUTHENTICATED' },
     });
   }
 
   return user;
 };
-
