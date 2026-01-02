@@ -123,8 +123,8 @@ export const authResolvers = {
       });
 
       if (!user) {
-        throw new GraphQLError('Invalid email or password', {
-          extensions: { code: 'BAD_USER_INPUT' },
+        throw new GraphQLError('No account exists with this email. Please create a new account.', {
+          extensions: { code: 'USER_NOT_FOUND' },
         });
       }
 
