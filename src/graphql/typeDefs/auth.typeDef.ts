@@ -9,6 +9,7 @@ export const authTypeDefs = `#graphql
     message: String!
     email: String!
     requiresOTPVerification: Boolean!
+    otp: String
   }
 
   type LoginResponse {
@@ -18,11 +19,13 @@ export const authTypeDefs = `#graphql
     message: String!
     requiresOTPVerification: Boolean!
     email: String
+    otp: String
   }
 
   type OTPResponse {
     success: Boolean!
     message: String!
+    otp: String
   }
 
   type VerifyOTPResponse {

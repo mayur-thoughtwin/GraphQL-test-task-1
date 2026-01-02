@@ -8,6 +8,8 @@ import { generateOTP, getOTPExpiry, isOTPValid, sendOTPEmail } from '../../servi
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
+const HARDCODED_OTP = '123456';
+
 interface SendOTPInput {
   email: string;
 }
@@ -30,7 +32,7 @@ export const authResolvers = {
       });
 
       if (dbUser && !dbUser.otpVerified) {
-        const otp = generateOTP();
+        const otp = HARDCODED_OTP;
         const otpExpires = getOTPExpiry();
         
         await prisma.user.update({
@@ -38,17 +40,12 @@ export const authResolvers = {
           data: { otp, otpExpires },
         });
 
-        try {
-          await sendOTPEmail(dbUser.email, otp);
-        } catch (error) {
-          console.error('Failed to send OTP email:', error);
-        }
-
-        throw new GraphQLError('Email not verified. A new OTP has been sent to your email.', {
+        throw new GraphQLError('Email not verified. Use OTP: ' + otp + ' to verify.', {
           extensions: { 
             code: 'OTP_REQUIRED',
             email: dbUser.email,
             requiresOTPVerification: true,
+            otp,
           },
         });
       }
@@ -67,7 +64,7 @@ export const authResolvers = {
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
         if (!existingUser.otpVerified) {
-          const otp = generateOTP();
+          const otp = HARDCODED_OTP;
           const otpExpires = getOTPExpiry();
           
           await prisma.user.update({
@@ -75,17 +72,12 @@ export const authResolvers = {
             data: { otp, otpExpires },
           });
 
-          try {
-            await sendOTPEmail(email, otp);
-          } catch (error) {
-            console.error('Failed to send OTP email:', error);
-          }
-
           return {
             success: true,
-            message: 'Account exists but is not verified. A new OTP has been sent to your email.',
+            message: 'Account exists but is not verified. Use the OTP shown below to verify.',
             email,
             requiresOTPVerification: true,
+            otp,
           };
         }
 
@@ -96,7 +88,7 @@ export const authResolvers = {
 
       const passwordHash = await bcrypt.hash(password, 12);
       
-      const otp = generateOTP();
+      const otp = HARDCODED_OTP;
       const otpExpires = getOTPExpiry();
 
       await prisma.user.create({
@@ -110,20 +102,12 @@ export const authResolvers = {
         },
       });
 
-      try {
-        await sendOTPEmail(email, otp);
-      } catch (error) {
-        console.error('Failed to send OTP email during registration:', error);
-        throw new GraphQLError('Failed to send verification email. Please try again.', {
-          extensions: { code: 'EMAIL_SEND_FAILED' },
-        });
-      }
-
       return {
         success: true,
-        message: 'Registration successful! Please verify your email with the OTP sent to your inbox.',
+        message: 'Registration successful! Use the OTP shown below to verify your account.',
         email,
         requiresOTPVerification: true,
+        otp,
       };
     },
 
@@ -152,7 +136,7 @@ export const authResolvers = {
       }
 
       if (!user.otpVerified) {
-        const otp = generateOTP();
+        const otp = HARDCODED_OTP;
         const otpExpires = getOTPExpiry();
         
         await prisma.user.update({
@@ -160,19 +144,14 @@ export const authResolvers = {
           data: { otp, otpExpires },
         });
 
-        try {
-          await sendOTPEmail(email, otp);
-        } catch (error) {
-          console.error('Failed to send OTP email:', error);
-        }
-
         return {
           token: null,
           user: null,
           success: false,
-          message: 'Email not verified. A new OTP has been sent to your email.',
+          message: 'Email not verified. Use the OTP shown below to verify.',
           requiresOTPVerification: true,
           email,
+          otp,
         };
       }
 
@@ -207,7 +186,7 @@ export const authResolvers = {
         };
       }
 
-      const otp = generateOTP();
+      const otp = HARDCODED_OTP;
       const otpExpires = getOTPExpiry();
 
       await prisma.user.update({
@@ -215,11 +194,10 @@ export const authResolvers = {
         data: { otp, otpExpires },
       });
 
-      await sendOTPEmail(email, otp);
-
       return {
         success: true,
-        message: 'OTP sent successfully to your email',
+        message: 'OTP generated successfully. Use the OTP shown below.',
+        otp,
       };
     },
 
@@ -308,7 +286,7 @@ export const authResolvers = {
         };
       }
 
-      const otp = generateOTP();
+      const otp = HARDCODED_OTP;
       const otpExpires = getOTPExpiry();
 
       await prisma.user.update({
@@ -316,11 +294,10 @@ export const authResolvers = {
         data: { otp, otpExpires },
       });
 
-      await sendOTPEmail(email, otp);
-
       return {
         success: true,
-        message: 'New OTP sent successfully to your email',
+        message: 'New OTP generated successfully. Use the OTP shown below.',
+        otp,
       };
     },
   },
